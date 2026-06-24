@@ -46,13 +46,54 @@ pip install -r requirements.txt
 
 Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
 
-```
-# e.g.:
-# Daily plan for Biscuit (Golden Retriever):
-#   08:00 — Morning walk (30 min) [priority: high]
-#   09:00 — Feeding (10 min) [priority: high]
-#   ...
-```
+====================================================
+        🐾  PawPal+ — Today's Schedule  🐾
+====================================================
+  Owner : Jordan
+  Budget: 120 min  |  Start: 08:00
+====================================================
+
+Daily plan for Biscuit (dog)  [budget: 120 min, start: 08:00]
+  08:00 — Medication (5 min) [priority: high]
+  08:05 — Feeding (10 min) [priority: high]
+  08:15 — Morning walk (30 min) [priority: high]
+  08:45 — Teeth brushing (10 min) [priority: medium]
+  08:55 — Enrichment toy (15 min) [priority: medium]
+  09:10 — Bath (40 min) [priority: low]
+
+  Time used: 110 / 120 min
+
+Plan explanation for Biscuit (Jordan, 120 min available):
+
+  ✓ Medication: scheduled first — highest priority
+  ✓ Feeding: scheduled first — highest priority
+  ✓ Morning walk: scheduled first — highest priority
+  ✓ Teeth brushing: included — fits within remaining time (priority: medium)
+  ✓ Enrichment toy: included — fits within remaining time (priority: medium)
+  ✓ Bath: included — fits within remaining time (priority: low)
+
+====================================================
+
+Daily plan for Mochi (cat)  [budget: 120 min, start: 08:00]
+  08:00 — Litter box (5 min) [priority: high]
+  08:05 — Feeding (10 min) [priority: high]
+  08:15 — Brush coat (10 min) [priority: medium]
+  08:25 — Playtime (15 min) [priority: medium]
+  08:40 — Vet check-up (30 min) [priority: low]
+
+  Time used: 70 / 120 min
+
+Plan explanation for Mochi (Jordan, 120 min available):
+
+  ✓ Litter box: scheduled first — highest priority
+  ✓ Feeding: scheduled first — highest priority
+  ✓ Brush coat: included — fits within remaining time (priority: medium)
+  ✓ Playtime: included — fits within remaining time (priority: medium)
+  ✓ Vet check-up: included — fits within remaining time (priority: low)
+
+====================================================
+  All schedules generated. Have a great day! 🐶🐱
+====================================================
 
 ## 🧪 Testing PawPal+
 
