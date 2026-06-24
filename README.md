@@ -132,3 +132,31 @@ Describe your app in numbered steps so a reader can follow along without watchin
 5. Expand "Why was this plan chosen?" to read the explanation of every included and skipped task.
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+
+Testing PawPal+
+
+Run the test suite with: python -m pytest
+
+The tests verify the main scheduling features, including:
+- Task completion status updates
+- Adding tasks to pets
+- Task sorting by time
+- Daily and weekly recurring tasks
+- Conflict detection
+- Handling empty schedules and time-budget limits
+
+Sample test output:
+====================================================================== test session starts =======================================================================
+platform win32 -- Python 3.14.5, pytest-9.0.3, pluggy-1.6.0
+rootdir: C:\Users\anuja\ai110-module2show-pawpal-starter
+plugins: anyio-4.13.0
+collected 11 items                                                                                                                                                
+
+tests\test_pawpal.py ...........                                                                                                                            [100%]
+
+======================================================================= 11 passed in 0.27s =======================================================================
+
+Confidence Level
+⭐⭐⭐⭐⭐ (5/5)
+All automated tests pass successfully, giving strong confidence that the scheduling, recurrence, and conflict detection features work as expected.
+
