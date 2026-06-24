@@ -30,11 +30,13 @@ Yes
 
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
+The scheduler considers three main factors: available time, task priority, and recurrence. Priority is the most important because essential tasks like feeding or medication should always be handled first. Available time is the next constraint since it limits how many tasks can be completed in a day.
 
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
+The scheduler uses a greedy approach, meaning it schedules higher-priority tasks first and skips tasks that no longer fit within the remaining time. This can sometimes leave out smaller tasks that could have fit together, but it keeps the scheduling process simple, predictable, and easy to understand. For a small daily pet-care schedule, this approach is practical and matches how most people naturally plan their day.
 
 ---
 

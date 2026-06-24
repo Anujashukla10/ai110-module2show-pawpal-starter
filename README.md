@@ -107,9 +107,8 @@ pytest --cov
 
 Sample test output:
 
-```
-# Paste your pytest output here
-```
+test_pawpal.py::test_mark_complete_changes_status        PASSED
+test_pawpal.py::test_add_task_increases_pet_task_count   PASSED
 
 ## 📐 Smarter Scheduling
 
@@ -117,19 +116,19 @@ Sample test output:
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting |sort_tasks(), sort_by_time() | Sorts tasks by priority and scheduled time. |
+| Filtering |filter_by_priority(), filter_by_recurrence(), filter_by_status(), filter_by_pet() | Filters tasks by priority, recurrence, completion status, or pet. |
+| Conflict handling |check_conflicts(), check_cross_pet_conflicts() | Detects overlapping tasks and returns warnings. |
+| Recurring tasks |next_occurrence(), mark_task_complete() | Automatically creates the next daily or weekly task when completed. |
 
 ## 📸 Demo Walkthrough
 
 Describe your app in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. Run streamlit run app.py and fill in your name, daily time budget, and start time, then click Save owner.
+2. Add a pet (name, species, breed, age) and click Add pet.
+3. Add tasks one at a time - set a title, duration, priority, and recurrence, then click Add task. Repeat for each care activity.
+4. Click Build Today's Schedule to generate the plan. The table shows each task in time order with its assigned slot.
+5. Expand "Why was this plan chosen?" to read the explanation of every included and skipped task.
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

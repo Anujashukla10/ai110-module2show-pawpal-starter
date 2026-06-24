@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 import copy
+import datetime
 
 
 # ─────────────────────────────────────────────
@@ -19,10 +20,13 @@ class Task:
 
     title: str
     duration_minutes: int
-    priority: str                          # "high" | "medium" | "low"
-    recurrence: str = "daily"             # "daily" | "weekly" | "as_needed"
-    scheduled_time: Optional[str] = None  # "HH:MM", assigned by Scheduler
+    priority: str                              # "high" | "medium" | "low"
+    recurrence: str = "daily"                 # "daily" | "weekly" | "as_needed"
+    scheduled_time: Optional[str] = None      # "HH:MM", assigned by Scheduler
     completed: bool = False
+    due_date: datetime.date = field(          # defaults to today
+        default_factory=datetime.date.today
+    )
 
     def __post_init__(self) -> None:
         """Validate priority, recurrence, and duration on creation."""
@@ -42,6 +46,26 @@ class Task:
     def mark_complete(self) -> None:
         """Set completed to True to record this task as done."""
         self.completed = True
+
+    def next_occurrence(self) -> Optional["Task"]:
+        """Return a new Task due on the next recurrence date (daily+1, weekly+7), or None for as_needed."""
+        if self.recurrence == "as_needed":
+            return None   # no automatic recurrence for one-off tasks
+
+        if self.recurrence == "daily":
+            next_date = self.due_date + datetime.timedelta(days=1)
+        else:  # "weekly"
+            next_date = self.due_date + datetime.timedelta(weeks=1)
+
+        return Task(
+            title=self.title,
+            duration_minutes=self.duration_minutes,
+            priority=self.priority,
+            recurrence=self.recurrence,
+            scheduled_time=None,   # Scheduler will assign this
+            completed=False,
+            due_date=next_date,
+        )
 
     def is_high_priority(self) -> bool:
         """Return True if this task's priority is 'high'."""
@@ -265,6 +289,31 @@ class Scheduler:
         return [t for t in self.owner.get_tasks_for_pet(self.pet.name)
                 if t.recurrence == recurrence]
 
+    def sort_by_time(self) -> list[Task]:
+        """Return self.plan sorted chronologically using 'HH:MM' string comparison as a proxy for time order."""
+        if not self.plan:
+            raise RuntimeError(
+                "No plan built yet — call build_plan() before sort_by_time()."
+            )
+        return sorted(
+            self.plan,
+            key=lambda t: t.scheduled_time or "99:99"
+        )
+
+    def filter_by_status(self, completed: bool) -> list[Task]:
+        """Return planned tasks where completed matches the given bool (True=done, False=to-do)."""
+        if not self.plan:
+            raise RuntimeError(
+                "No plan built yet — call build_plan() before filter_by_status()."
+            )
+        return [t for t in self.plan if t.completed == completed]
+
+    def filter_by_pet(self, pet_name: str) -> list[Task]:
+        """Return this scheduler's plan if the pet name matches, or an empty list if it doesn't."""
+        if self.pet.name.lower() != pet_name.lower():
+            return []
+        return list(self.plan)
+
     def build_plan(self) -> list[Task]:
         """Greedily fit sorted tasks into the owner's time budget and store in self.plan."""
         tasks = self.sort_tasks()
@@ -275,11 +324,13 @@ class Scheduler:
             return self.plan
 
         start_h, start_m = map(int, self.start_time.split(":"))
-        current_minutes = start_h * 60 + start_m
-        elapsed = 0
+        start_minutes   = start_h * 60 + start_m
+        current_minutes = start_minutes   # moves forward as tasks are added
         scheduled = []
 
         for task in tasks:
+            # elapsed is derived — no need to track it as a separate variable
+            elapsed = current_minutes - start_minutes
             if elapsed + task.duration_minutes > self.owner.available_minutes:
                 self._skipped.append(task)
                 continue
@@ -290,33 +341,84 @@ class Scheduler:
             task_copy.scheduled_time = f"{slot_h:02d}:{slot_m:02d}"
 
             current_minutes += task.duration_minutes
-            elapsed += task.duration_minutes
             scheduled.append(task_copy)
 
         self.plan = scheduled
         return self.plan
 
-    def check_conflicts(self) -> list[tuple[Task, Task]]:
-        """Return overlapping (task_a, task_b) pairs, raising RuntimeError if build_plan() hasn't run."""
+    def check_conflicts(self) -> list[str]:
+        """Return human-readable warning strings for every overlapping time window in self.plan; never raises."""
         if not self.plan:
-            raise RuntimeError(
-                "self.plan is empty — call build_plan() before check_conflicts()."
-            )
-        conflicts = []
+            return ["ℹ️  No plan built yet — call build_plan() first."]
+
+        warnings = []
         for i, a in enumerate(self.plan):
             for b in self.plan[i + 1:]:
-                a_end = self._to_minutes(a.scheduled_time) + a.duration_minutes
+                a_start = self._to_minutes(a.scheduled_time)
+                a_end   = a_start + a.duration_minutes
                 b_start = self._to_minutes(b.scheduled_time)
-                if a_end > b_start:
-                    conflicts.append((a, b))
-        return conflicts
+                b_end   = b_start + b.duration_minutes
 
-    def mark_task_complete(self, title: str) -> None:
-        """Mark a scheduled task as complete by title, raising ValueError if not found."""
+                # Overlap condition: a starts before b ends AND b starts before a ends
+                if a_start < b_end and b_start < a_end:
+                    a_end_str = self._minutes_to_time(a_end)
+                    b_end_str = self._minutes_to_time(b_end)
+                    warnings.append(
+                        f"⚠️  CONFLICT on {self.pet.name}: "
+                        f"'{a.title}' ({a.scheduled_time}–{a_end_str}) "
+                        f"overlaps '{b.title}' ({b.scheduled_time}–{b_end_str})"
+                    )
+        return warnings
+
+    @staticmethod
+    def check_cross_pet_conflicts(schedulers: list["Scheduler"]) -> list[str]:
+        """Return warning strings for time-window overlaps across different pets' plans; never raises."""
+        # Flatten all plans into (pet_name, task) tuples
+        all_tasks: list[tuple[str, Task]] = []
+        for sched in schedulers:
+            for task in sched.plan:
+                all_tasks.append((sched.pet.name, task))
+
+        if not all_tasks:
+            return ["ℹ️  No plans found — call build_plan() on each scheduler first."]
+
+        warnings = []
+        for i, (pet_a, a) in enumerate(all_tasks):
+            for pet_b, b in all_tasks[i + 1:]:
+                if pet_a == pet_b:
+                    continue   # same-pet conflicts handled by check_conflicts()
+
+                a_start = Scheduler._to_minutes(a.scheduled_time)
+                a_end   = a_start + a.duration_minutes
+                b_start = Scheduler._to_minutes(b.scheduled_time)
+                b_end   = b_start + b.duration_minutes
+
+                if a_start < b_end and b_start < a_end:
+                    a_end_str = Scheduler._minutes_to_time(a_end)
+                    b_end_str = Scheduler._minutes_to_time(b_end)
+                    warnings.append(
+                        f"⚠️  CROSS-PET CONFLICT: "
+                        f"{pet_a}·'{a.title}' ({a.scheduled_time}–{a_end_str}) "
+                        f"overlaps "
+                        f"{pet_b}·'{b.title}' ({b.scheduled_time}–{b_end_str})"
+                    )
+        return warnings
+
+    def mark_task_complete(self, title: str) -> Optional[Task]:
+        """Mark a planned task done by title, auto-register its next occurrence, and return it (or None)."""
         for task in self.plan:
             if task.title.lower() == title.lower():
                 task.mark_complete()
-                return
+                next_task = task.next_occurrence()
+                if next_task is not None:
+                    # Remove the stale original from pet._tasks and add the
+                    # next occurrence so the pet's library stays current.
+                    try:
+                        self.pet.remove_task(task.title)
+                    except ValueError:
+                        pass  # already removed or was a copy — safe to skip
+                    self.pet.add_task(next_task)
+                return next_task
         raise ValueError(f"No scheduled task named {title!r}. Run build_plan() first.")
 
     def display_schedule(self) -> str:
@@ -394,6 +496,12 @@ class Scheduler:
         """Convert an 'HH:MM' string to total minutes since midnight."""
         h, m = map(int, time_str.split(":"))
         return h * 60 + m
+
+    @staticmethod
+    def _minutes_to_time(minutes: int) -> str:
+        """Convert total minutes since midnight back to an 'HH:MM' string."""
+        h, m = divmod(minutes, 60)
+        return f"{h:02d}:{m:02d}"
 
     def __repr__(self) -> str:
         """Return a concise developer-facing string for this scheduler."""
