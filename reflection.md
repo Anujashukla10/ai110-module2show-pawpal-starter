@@ -1,6 +1,9 @@
 # PawPal+ Project Reflection
 
 ## 1. System Design
+    - a user should get a daily plan
+    - add a pet
+    -keep track of tasks
 
 **a. Initial design**
 
