@@ -8,12 +8,19 @@
 **a. Initial design**
 
 - Briefly describe your initial UML design.
+The UML has four classes. Owner: time budget, start time, and preferences. Pet: animal and owns the task list. Task: priority, duration, recurrence, and a scheduled_time slot which starts empty. Scheduler takes an Owner and a Pet, sorts and filters their tasks, fits them into the time budget, and produces the final plan with an explanation.
+
 - What classes did you include, and what responsibilities did you assign to each?
+Owner and Pet are both passive data holders, Task for priority, and Scheduler for the planning logic.
+
 
 **b. Design changes**
 
 - Did your design change during implementation?
+Yes
+
 - If yes, describe at least one change and why you made it.
+ Owner/Pet not linkek, now checks if owner.pets and pet not in owner.pets and raises a ValueError immediately, so a mismatched pair fails at construction time instead of silently producing a wrong plan.
 
 ---
 
