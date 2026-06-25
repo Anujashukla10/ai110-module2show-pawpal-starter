@@ -1,0 +1,79 @@
+classDiagram
+    class Owner {
+        -String name
+        -int available_minutes
+        -String preferred_start
+        -dict preferences
+        -list~Pet~ _pets
+        +add_pet(pet)
+        +get_pets() list
+        +get_pet(name) Pet
+        +remove_pet(name)
+        +get_all_tasks() list
+        +get_tasks_for_pet(pet_name) list
+        +set_availability(minutes)
+        +add_preference(key, value)
+        +get_preferences() dict
+        +summary() str
+    }
+
+    class Pet {
+        -String name
+        -String species
+        -String breed
+        -int age
+        -list~Task~ _tasks
+        +add_task(task)
+        +get_tasks() list
+        +get_tasks_by_priority(priority) list
+        +remove_task(title)
+        +clear_tasks()
+        +total_task_minutes() int
+        +summary() str
+    }
+
+    class Task {
+        -String title
+        -int duration_minutes
+        -String priority
+        -String recurrence
+        -String scheduled_time
+        -bool completed
+        -date due_date
+        +mark_complete()
+        +next_occurrence() Task
+        +is_high_priority() bool
+        +priority_score() int
+        +reset()
+        +summary() str
+    }
+
+    class Scheduler {
+        -Owner owner
+        -Pet pet
+        -list~Task~ plan
+        -String start_time
+        -list~Task~ _skipped
+        +add_task(task)
+        +remove_task(title)
+        +sort_tasks() list
+        +sort_by_time() list
+        +filter_by_priority(level) list
+        +filter_by_recurrence(recurrence) list
+        +filter_by_status(completed) list
+        +filter_by_pet(pet_name) list
+        +build_plan() list
+        +check_conflicts() list
+        +check_cross_pet_conflicts(schedulers)$
+        +mark_task_complete(title) Task
+        +display_schedule() str
+        +explain_plan() str
+        +progress_report() str
+    }
+
+    Owner "1" *-- "0..*" Pet : owns
+    Pet "1" *-- "0..*" Task : owns
+    Owner ..> Scheduler : injected into
+    Pet ..> Scheduler : injected into
+    Scheduler ..> Task : copies and schedules
+    Task ..> Task : next_occurrence() creates
