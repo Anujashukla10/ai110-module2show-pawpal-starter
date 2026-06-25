@@ -20,7 +20,7 @@ Owner and Pet are both passive data holders, Task for priority, and Scheduler fo
 Yes
 
 - If yes, describe at least one change and why you made it.
- Owner/Pet not linkek, now checks if owner.pets and pet not in owner.pets and raises a ValueError immediately, so a mismatched pair fails at construction time instead of silently producing a wrong plan.
+ Owner/Pet was not linked, but now it checks if owner.pets and pet not in owner.pets and raises a ValueError immediately, so a mismatched pair fails at construction time instead of silently producing a wrong plan.
 
 ---
 
@@ -49,7 +49,7 @@ The scheduler uses a greedy approach, meaning it schedules higher-priority tasks
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-I used AI to help brainstorm the UML design, generate class skeletons, implement methods, debug errors, and create test cases. It also helped explain parts of the code that I did not fully understand.
+I used AI to help brainstorm the UML design, generate class skeletons, implement methods, debug errors, and create test cases. It also helped explain parts of the code that I did not fully understand after asking follow up questions.
 
 - What kinds of prompts or questions were most helpful?
 The most helpful prompts were specific questions about my code, such as how to implement sorting, recurring tasks, and conflict detection. Asking AI to explain why a solution worked was also useful.
@@ -99,4 +99,4 @@ I would improve the system so multiple pets share the same overall time budget i
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
-I learned that AI is very useful for generating ideas and code quickly, but it is still important to review, test, and verify every suggestion before using it in a project.
+I learned how to use AI as a helpful coding partner by asking it to explain code, solve specific problems, review my work, and suggest improvements. At the same time, I learned that it is important to review, test, and verify every suggestion before using it in a project.
