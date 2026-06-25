@@ -29,6 +29,7 @@ Your final app should:
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+pip install tabulate        # CLI table formatting
 ```
 
 ### Run the app
@@ -44,23 +45,69 @@ python main.py
 ## 🖥️ Sample Output
 
 ```
-====================================================
-        🐾  PawPal+ — Today's Schedule  🐾
-====================================================
-  Owner : Jordan
-  Budget: 120 min  |  Start: 08:00
-====================================================
+════════════════════════════════════════════════════════════
+               🐾  PawPal+ — Today's Schedule
+════════════════════════════════════════════════════════════
+  📅  Wednesday, June 24 2026
 
-Daily plan for Biscuit (dog)  [budget: 120 min, start: 08:00]
-  08:00 — Medication (5 min) [priority: high]
-  08:05 — Feeding (10 min) [priority: high]
-  08:15 — Morning walk (30 min) [priority: high]
-  08:45 — Teeth brushing (10 min) [priority: medium]
-  08:55 — Enrichment toy (15 min) [priority: medium]
-  09:10 — Bath (40 min) [priority: low]
+  Owner:  Jordan
+  Budget: 120 min  │  Start: 08:00
+════════════════════════════════════════════════════════════
 
-  Time used: 110 / 120 min
+🐕 Biscuit (Golden Retriever)
+────────────────────────────────────────────────────────────
+╭─────────────┬──────────────────┬────────────┬────────────┬──────────────╮
+│ Time        │ Task             │   Duration │ Priority   │ Recurrence   │
+├─────────────┼──────────────────┼────────────┼────────────┼──────────────┤
+│ 08:00–08:05 │ 💊 Medication     │      5 min │ ● HIGH     │ 📅 daily      │
+│ 08:05–08:15 │ 🍽 Feeding        │     10 min │ ● HIGH     │ 📅 daily      │
+│ 08:15–08:45 │ 🚶 Morning walk   │     30 min │ ● HIGH     │ 📅 daily      │
+│ 08:45–08:55 │ 🛁 Teeth brushing │     10 min │ ● MED      │ 📅 daily      │
+│ 08:55–09:10 │ 🎾 Enrichment toy │     15 min │ ● MED      │ 📅 daily      │
+│ 09:10–09:50 │ 🛁 Bath           │     40 min │ ● LOW      │ 📆 weekly     │
+╰─────────────┴──────────────────┴────────────┴────────────┴──────────────╯
 
+  Time used: [███████████████████████████░░░] 110/120 min
+
+  Progress: 0/6 tasks complete (0%)
+  Still to do:
+    ○  💊 Medication  @ 08:00
+    ○  🍽 Feeding  @ 08:05
+    ○  🚶 Morning walk  @ 08:15
+    ○  🛁 Teeth brushing  @ 08:45
+    ○  🎾 Enrichment toy  @ 08:55
+    ○  🛁 Bath  @ 09:10
+
+🐈 Mochi (Siamese)
+────────────────────────────────────────────────────────────
+╭─────────────┬────────────────┬────────────┬────────────┬──────────────╮
+│ Time        │ Task           │   Duration │ Priority   │ Recurrence   │
+├─────────────┼────────────────┼────────────┼────────────┼──────────────┤
+│ 08:00–08:05 │ 🧹 Litter box   │      5 min │ ● HIGH     │ 📅 daily      │
+│ 08:05–08:15 │ 🍽 Feeding      │     10 min │ ● HIGH     │ 📅 daily      │
+│ 08:15–08:25 │ 🛁 Brush coat   │     10 min │ ● MED      │ 📆 weekly     │
+│ 08:25–08:40 │ 🎾 Playtime     │     15 min │ ● MED      │ 📅 daily      │
+│ 08:40–09:10 │ 🏥 Vet check-up │     30 min │ ● LOW      │ 🔔 as needed  │
+╰─────────────┴────────────────┴────────────┴────────────┴──────────────╯
+
+  Time used: [█████████████████░░░░░░░░░░░░░] 70/120 min
+
+  Progress: 0/5 tasks complete (0%)
+  Still to do:
+    ○  🧹 Litter box  @ 08:00
+    ○  🍽 Feeding  @ 08:05
+    ○  🛁 Brush coat  @ 08:15
+    ○  🎾 Playtime  @ 08:25
+    ○  🏥 Vet check-up  @ 08:40
+
+⚠️  Conflict Check
+────────────────────────────────────────────────────────────
+  ⚠️  CROSS-PET CONFLICT: Biscuit·'Medication' (08:00–08:05) overlaps Mochi·'Litter box' (08:00–08:05)
+  ⚠️  CROSS-PET CONFLICT: Biscuit·'Feeding' (08:05–08:15) overlaps Mochi·'Feeding' (08:05–08:15)
+  ⚠️  CROSS-PET CONFLICT: Biscuit·'Morning walk' (08:15–08:45) overlaps Mochi·'Brush coat' (08:15–08:25)
+
+💡 Why was this plan chosen?
+────────────────────────────────────────────────────────────
 Plan explanation for Biscuit (Jordan, 120 min available):
 
   ✓ Medication: scheduled first — highest priority
@@ -70,17 +117,6 @@ Plan explanation for Biscuit (Jordan, 120 min available):
   ✓ Enrichment toy: included — fits within remaining time (priority: medium)
   ✓ Bath: included — fits within remaining time (priority: low)
 
-====================================================
-
-Daily plan for Mochi (cat)  [budget: 120 min, start: 08:00]
-  08:00 — Litter box (5 min) [priority: high]
-  08:05 — Feeding (10 min) [priority: high]
-  08:15 — Brush coat (10 min) [priority: medium]
-  08:25 — Playtime (15 min) [priority: medium]
-  08:40 — Vet check-up (30 min) [priority: low]
-
-  Time used: 70 / 120 min
-
 Plan explanation for Mochi (Jordan, 120 min available):
 
   ✓ Litter box: scheduled first — highest priority
@@ -89,9 +125,9 @@ Plan explanation for Mochi (Jordan, 120 min available):
   ✓ Playtime: included — fits within remaining time (priority: medium)
   ✓ Vet check-up: included — fits within remaining time (priority: low)
 
-====================================================
-  All schedules generated. Have a great day! 🐶🐱
-====================================================
+════════════════════════════════════════════════════════════
+  All schedules generated.  11 tasks · 180 min planned  🐶🐱
+════════════════════════════════════════════════════════════
 ```
 
 ## 📐 Smarter Scheduling
@@ -162,64 +198,124 @@ Click **🗓️ Build Today's Schedule**. The scheduler runs `build_plan()` for 
 ### CLI output (`python main.py`)
 
 ```
-======================================================
-   🐾  PawPal+ — Conflict Detection Demo  🐾
-======================================================
-   Today: Wednesday, June 24 2026
-======================================================
+════════════════════════════════════════════════════════════
+               🐾  PawPal+ — Today's Schedule
+════════════════════════════════════════════════════════════
+  📅  Wednesday, June 24 2026
 
-── SCENARIO 1: Normal plan (expect no conflicts) ──
+  Owner:  Jordan
+  Budget: 120 min  │  Start: 08:00
+════════════════════════════════════════════════════════════
 
-   08:00 — Morning walk (30 min)
-   08:30 — Feeding (10 min)
-   08:40 — Medication (5 min)
+🐕 Biscuit (Golden Retriever)
+────────────────────────────────────────────────────────────
+╭─────────────┬──────────────────┬────────────┬────────────┬──────────────╮
+│ Time        │ Task             │   Duration │ Priority   │ Recurrence   │
+├─────────────┼──────────────────┼────────────┼────────────┼──────────────┤
+│ 08:00–08:05 │ 💊 Medication     │      5 min │ ● HIGH     │ 📅 daily      │
+│ 08:05–08:15 │ 🍽 Feeding        │     10 min │ ● HIGH     │ 📅 daily      │
+│ 08:15–08:45 │ 🚶 Morning walk   │     30 min │ ● HIGH     │ 📅 daily      │
+│ 08:45–08:55 │ 🛁 Teeth brushing │     10 min │ ● MED      │ 📅 daily      │
+│ 08:55–09:10 │ 🎾 Enrichment toy │     15 min │ ● MED      │ 📅 daily      │
+│ 09:10–09:50 │ 🛁 Bath           │     40 min │ ● LOW      │ 📆 weekly     │
+╰─────────────┴──────────────────┴────────────┴────────────┴──────────────╯
 
-------------------------------------------------------
-  Same-pet conflict check — Biscuit
-------------------------------------------------------
-  ✅  No conflicts detected.
+  Time used: [███████████████████████████░░░] 110/120 min
 
+  Progress: 0/6 tasks complete (0%)
+  Still to do:
+    ○  💊 Medication  @ 08:00
+    ○  🍽 Feeding  @ 08:05
+    ○  🚶 Morning walk  @ 08:15
+    ○  🛁 Teeth brushing  @ 08:45
+    ○  🎾 Enrichment toy  @ 08:55
+    ○  🛁 Bath  @ 09:10
 
-── SCENARIO 2: Same-pet conflict (forced overlap) ──
+🐈 Mochi (Siamese)
+────────────────────────────────────────────────────────────
+╭─────────────┬────────────────┬────────────┬────────────┬──────────────╮
+│ Time        │ Task           │   Duration │ Priority   │ Recurrence   │
+├─────────────┼────────────────┼────────────┼────────────┼──────────────┤
+│ 08:00–08:05 │ 🧹 Litter box   │      5 min │ ● HIGH     │ 📅 daily      │
+│ 08:05–08:15 │ 🍽 Feeding      │     10 min │ ● HIGH     │ 📅 daily      │
+│ 08:15–08:25 │ 🛁 Brush coat   │     10 min │ ● MED      │ 📆 weekly     │
+│ 08:25–08:40 │ 🎾 Playtime     │     15 min │ ● MED      │ 📅 daily      │
+│ 08:40–09:10 │ 🏥 Vet check-up │     30 min │ ● LOW      │ 🔔 as needed  │
+╰─────────────┴────────────────┴────────────┴────────────┴──────────────╯
 
-   Manually setting 'Feeding' and 'Morning walk' to 08:00...
-   08:00–08:30  Morning walk
-   08:00–08:10  Feeding
-   08:25–08:30  Medication
+  Time used: [█████████████████░░░░░░░░░░░░░] 70/120 min
 
-------------------------------------------------------
-  Same-pet conflict check — Biscuit (forced)
-------------------------------------------------------
-  ⚠️  CONFLICT on Biscuit: 'Morning walk' (08:00–08:30) overlaps 'Feeding' (08:00–08:10)
-  ⚠️  CONFLICT on Biscuit: 'Morning walk' (08:00–08:30) overlaps 'Medication' (08:25–08:30)
+  Progress: 0/5 tasks complete (0%)
+  Still to do:
+    ○  🧹 Litter box  @ 08:00
+    ○  🍽 Feeding  @ 08:05
+    ○  🛁 Brush coat  @ 08:15
+    ○  🎾 Playtime  @ 08:25
+    ○  🏥 Vet check-up  @ 08:40
 
+⚠️  Conflict Check
+────────────────────────────────────────────────────────────
+  ⚠️  CROSS-PET CONFLICT: Biscuit·'Medication' (08:00–08:05) overlaps Mochi·'Litter box' (08:00–08:05)
+  ⚠️  CROSS-PET CONFLICT: Biscuit·'Feeding' (08:05–08:15) overlaps Mochi·'Feeding' (08:05–08:15)
+  ⚠️  CROSS-PET CONFLICT: Biscuit·'Morning walk' (08:15–08:45) overlaps Mochi·'Brush coat' (08:15–08:25)
 
-── SCENARIO 3: Cross-pet conflict ──
+💡 Why was this plan chosen?
+────────────────────────────────────────────────────────────
+Plan explanation for Biscuit (Jordan, 120 min available):
 
-   Both pets start at 08:00 — Jordan can't walk Biscuit
-   and clean Mochi's litter box simultaneously.
+  ✓ Medication: scheduled first — highest priority
+  ✓ Feeding: scheduled first — highest priority
+  ✓ Morning walk: scheduled first — highest priority
+  ✓ Teeth brushing: included — fits within remaining time (priority: medium)
+  ✓ Enrichment toy: included — fits within remaining time (priority: medium)
+  ✓ Bath: included — fits within remaining time (priority: low)
 
-   Biscuit's plan:
-     08:00–08:30  Morning walk
-     08:30–08:40  Feeding
-     08:40–08:45  Medication
+Plan explanation for Mochi (Jordan, 120 min available):
 
-   Mochi's plan:
-     08:00–08:05  Litter box
-     08:05–08:15  Feeding
-     08:15–08:30  Playtime
+  ✓ Litter box: scheduled first — highest priority
+  ✓ Feeding: scheduled first — highest priority
+  ✓ Brush coat: included — fits within remaining time (priority: medium)
+  ✓ Playtime: included — fits within remaining time (priority: medium)
+  ✓ Vet check-up: included — fits within remaining time (priority: low)
 
-------------------------------------------------------
-  Cross-pet conflict check — Biscuit vs Mochi
-------------------------------------------------------
-  ⚠️  CROSS-PET CONFLICT: Biscuit·'Morning walk' (08:00–08:30) overlaps Mochi·'Litter box' (08:00–08:05)
-  ⚠️  CROSS-PET CONFLICT: Biscuit·'Morning walk' (08:00–08:30) overlaps Mochi·'Feeding' (08:05–08:15)
-  ⚠️  CROSS-PET CONFLICT: Biscuit·'Morning walk' (08:00–08:30) overlaps Mochi·'Playtime' (08:15–08:30)
-
-======================================================
-  Conflict detection verified — no crashes. 🐾
-======================================================
+════════════════════════════════════════════════════════════
+  All schedules generated.  11 tasks · 180 min planned  🐶🐱
+════════════════════════════════════════════════════════════
 ```
+
+## 🎨 Formatting Features
+
+### CLI (`main.py`)
+
+| Feature | Implementation | Where you see it |
+|---|---|---|
+| **Structured tables** | `tabulate` library, `rounded_outline` style | Schedule printed as a box-drawn table with aligned columns |
+| **ANSI colour-coded priority** | `\033[91m` red / `\033[93m` yellow / `\033[92m` green + `\033[0m` reset | `● HIGH` in red, `● MED` in yellow, `● LOW` in green in the Priority column |
+| **Task-type emoji icons** | `task_icon()` keyword matcher in `main.py` | 🚶 walks, 🍽 feeding, 💊 medication, 🛁 grooming, 🎾 enrichment, 🏥 vet, 🧹 litter |
+| **Recurrence badges** | `recurrence_badge()` in `main.py` | 📅 daily, 📆 weekly, 🔔 as needed |
+| **ASCII progress bar** | Inline string — `█` filled, `░` empty, coloured by % used | `[███████████░░░░░]  110/120 min` — yellow if >85%, red if over budget |
+| **Section headers** | `print_section()` with ANSI bold + cyan + dim divider | Cyan bold labels between each output block |
+| **Conflict warnings** | Red ANSI on `⚠️ CONFLICT` lines | Conflict lines printed in red; clean result printed in green |
+
+### Streamlit UI (`app.py`)
+
+| Feature | Component | Where you see it |
+|---|---|---|
+| **Priority colour dots** | `PRIORITY_EMOJI` dict — 🔴 🟡 🟢 | Priority column in every schedule table |
+| **Time budget bar** | `st.progress(pct, text=...)` | Fills proportionally; label shows `used / total min` |
+| **Conflict banners** | `st.warning(...)` + `st.expander(...)` | Yellow banner above the table; expandable detail list |
+| **Progress tiles** | `st.metric("Tasks to do", n)` | Two side-by-side metric cards below each schedule |
+| **Skipped tasks** | `st.expander("⏭ Skipped tasks...")` | Collapsible block listing tasks that didn't fit |
+| **Reasoning panel** | `st.expander("💡 Why was this plan chosen?")` | Collapsible `explain_plan()` output per pet |
+
+### Libraries used
+
+```bash
+pip install tabulate   # CLI table formatting
+# streamlit            # already in requirements.txt
+```
+
+`tabulate` is a lightweight library with no dependencies. Pass a list of rows, a headers list, and a `tablefmt` string — `"rounded_outline"` gives the box-drawn borders. ANSI colours are built into Python's string literals and need no extra library.
 
 ## 🧪 Testing PawPal+
 

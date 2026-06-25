@@ -1,125 +1,222 @@
 """
-PawPal+ — main.py (v5)
-Demos lightweight conflict detection:
-  - Same-pet conflict:  two tasks manually forced to the same time slot
-  - Cross-pet conflict: dog and cat tasks overlapping on Jordan's schedule
+PawPal+ — main.py (v6)
+Professional CLI formatting:
+  - tabulate: structured tables for schedule, tasks, and progress
+  - Color-coded ANSI priority badges (high=red, medium=yellow, low=green)
+  - Emoji task-type icons (🚶 walk, 🍽 feed, 💊 meds, 🛁 groom, 🎾 enrichment)
+  - Conflict warning banners with divider lines
 """
 
 import copy
 import datetime
+from tabulate import tabulate
 from pawpal_system import Owner, Pet, Task, Scheduler
 
 
-def print_warnings(warnings: list[str], label: str) -> None:
-    """Print a labelled block of conflict warnings (or a clean bill of health)."""
-    thin = "-" * 54
-    print(f"\n{thin}")
-    print(f"  {label}")
-    print(thin)
-    if warnings:
-        for w in warnings:
-            print(f"  {w}")
-    else:
-        print("  ✅  No conflicts detected.")
+# ─────────────────────────────────────────────
+# ANSI color helpers
+# ─────────────────────────────────────────────
 
+RESET  = "\033[0m"
+RED    = "\033[91m"
+YELLOW = "\033[93m"
+GREEN  = "\033[92m"
+CYAN   = "\033[96m"
+BOLD   = "\033[1m"
+DIM    = "\033[2m"
+
+def priority_badge(priority: str) -> str:
+    """Return a colour-coded priority label for terminal output."""
+    colors = {"high": RED, "medium": YELLOW, "low": GREEN}
+    labels = {"high": "● HIGH", "medium": "● MED ", "low": "● LOW "}
+    color = colors.get(priority, RESET)
+    label = labels.get(priority, priority.upper())
+    return f"{color}{label}{RESET}"
+
+
+def task_icon(title: str) -> str:
+    """Return an emoji icon based on common task-title keywords."""
+    t = title.lower()
+    if any(w in t for w in ["walk", "run", "exercise", "hike"]):
+        return "🚶"
+    if any(w in t for w in ["feed", "food", "meal", "treat"]):
+        return "🍽"
+    if any(w in t for w in ["med", "pill", "tablet", "injection"]):
+        return "💊"
+    if any(w in t for w in ["bath", "groom", "brush", "teeth"]):
+        return "🛁"
+    if any(w in t for w in ["play", "enrich", "toy", "training"]):
+        return "🎾"
+    if any(w in t for w in ["vet", "check", "appointment"]):
+        return "🏥"
+    if any(w in t for w in ["litter", "clean"]):
+        return "🧹"
+    return "📋"
+
+
+def recurrence_badge(recurrence: str) -> str:
+    """Return a short label for recurrence."""
+    return {"daily": "📅 daily", "weekly": "📆 weekly", "as_needed": "🔔 as needed"}.get(
+        recurrence, recurrence
+    )
+
+
+def print_section(title: str, char: str = "─", width: int = 60) -> None:
+    """Print a styled section header."""
+    print(f"\n{BOLD}{CYAN}{title}{RESET}")
+    print(DIM + char * width + RESET)
+
+
+def print_warnings(warnings: list[str], label: str) -> None:
+    """Print a labelled conflict block."""
+    print(f"\n{DIM}{'─' * 54}{RESET}")
+    print(f"  {BOLD}{label}{RESET}")
+    print(DIM + "─" * 54 + RESET)
+    real = [w for w in warnings if "CONFLICT" in w]
+    if real:
+        for w in real:
+            print(f"  {RED}{w}{RESET}")
+    else:
+        print(f"  {GREEN}✅  No conflicts detected.{RESET}")
+
+
+def render_schedule_table(sched: Scheduler, pet_name: str) -> None:
+    """Print the plan as a formatted tabulate table with colour and icons."""
+    if not sched.plan:
+        print(f"  {DIM}No tasks scheduled.{RESET}")
+        return
+
+    rows = []
+    for t in sched.sort_by_time():
+        end_min = Scheduler._to_minutes(t.scheduled_time) + t.duration_minutes
+        end_str = Scheduler._minutes_to_time(end_min)
+        rows.append([
+            f"{t.scheduled_time}–{end_str}",
+            f"{task_icon(t.title)} {t.title}",
+            f"{t.duration_minutes} min",
+            priority_badge(t.priority),
+            recurrence_badge(t.recurrence),
+        ])
+
+    print(tabulate(
+        rows,
+        headers=["Time", "Task", "Duration", "Priority", "Recurrence"],
+        tablefmt="rounded_outline",
+        colalign=("left", "left", "right", "left", "left"),
+    ))
+
+    used  = sum(t.duration_minutes for t in sched.plan)
+    total = sched.owner.available_minutes
+    bar_width = 30
+    filled = int(bar_width * used / total)
+    bar = f"[{'█' * filled}{'░' * (bar_width - filled)}]"
+    color = GREEN if used / total < 0.85 else YELLOW if used / total < 1.0 else RED
+    print(f"\n  {BOLD}Time used:{RESET} {color}{bar}{RESET} {used}/{total} min")
+
+    if sched._skipped:
+        print(f"\n  {YELLOW}⏭  Skipped — not enough time:{RESET}")
+        skipped_rows = [[
+            f"{task_icon(t.title)} {t.title}",
+            f"{t.duration_minutes} min",
+            priority_badge(t.priority),
+        ] for t in sched._skipped]
+        print(tabulate(skipped_rows, headers=["Task", "Duration", "Priority"],
+                       tablefmt="simple", colalign=("left", "right", "left")))
+
+
+def render_progress(sched: Scheduler) -> None:
+    """Print a done/remaining progress summary."""
+    done      = sched.filter_by_status(completed=True)
+    remaining = sched.filter_by_status(completed=False)
+    total     = len(sched.plan)
+    pct       = int(100 * len(done) / total) if total else 0
+    color     = GREEN if pct == 100 else YELLOW if pct > 0 else DIM
+    print(f"\n  {BOLD}Progress:{RESET} {color}{len(done)}/{total} tasks complete ({pct}%){RESET}")
+    if remaining:
+        print(f"  {DIM}Still to do:{RESET}")
+        for t in remaining:
+            print(f"    ○  {task_icon(t.title)} {t.title}  {DIM}@ {t.scheduled_time}{RESET}")
+
+
+# ─────────────────────────────────────────────
+# Main
+# ─────────────────────────────────────────────
 
 def main():
-    divider = "=" * 54
-    today   = datetime.date.today()
+    today = datetime.date.today()
+    W = 60
 
-    print(divider)
-    print("   🐾  PawPal+ — Conflict Detection Demo  🐾")
-    print(divider)
-    print(f"   Today: {today.strftime('%A, %B %d %Y')}")
-    print(divider)
+    print(f"\n{BOLD}{'═' * W}{RESET}")
+    print(f"{BOLD}{'🐾  PawPal+ — Today\'s Schedule':^{W}}{RESET}")
+    print(f"{BOLD}{'═' * W}{RESET}")
+    print(f"  📅  {today.strftime('%A, %B %d %Y')}")
 
     # ── Setup ─────────────────────────────────────────────────────────
     owner = Owner(name="Jordan", available_minutes=120, preferred_start="08:00")
-    dog   = Pet(name="Biscuit", species="dog")
-    cat   = Pet(name="Mochi",   species="cat")
+    dog   = Pet(name="Biscuit", species="dog", breed="Golden Retriever", age=3)
+    cat   = Pet(name="Mochi",   species="cat", breed="Siamese",          age=5)
     owner.add_pet(dog)
     owner.add_pet(cat)
 
-    # ── SCENARIO 1: Normal plan — no conflicts ─────────────────────────
-    print("\n── SCENARIO 1: Normal plan (expect no conflicts) ──\n")
+    print(f"\n  {BOLD}Owner:{RESET}  {owner.name}")
+    print(f"  {BOLD}Budget:{RESET} {owner.available_minutes} min  │  "
+          f"{BOLD}Start:{RESET} {owner.preferred_start}")
+    print(f"{BOLD}{'═' * W}{RESET}")
 
+    # ── Biscuit ───────────────────────────────────────────────────────
     dog_sched = Scheduler(owner=owner, pet=dog)
-    dog_sched.add_task(Task("Morning walk", 30, "high",   recurrence="daily"))
-    dog_sched.add_task(Task("Feeding",      10, "high",   recurrence="daily"))
-    dog_sched.add_task(Task("Medication",    5, "high",   recurrence="daily"))
+    dog_sched.add_task(Task("Morning walk",   30, "high",   recurrence="daily"))
+    dog_sched.add_task(Task("Feeding",        10, "high",   recurrence="daily"))
+    dog_sched.add_task(Task("Medication",      5, "high",   recurrence="daily"))
+    dog_sched.add_task(Task("Teeth brushing", 10, "medium", recurrence="daily"))
+    dog_sched.add_task(Task("Enrichment toy", 15, "medium", recurrence="daily"))
+    dog_sched.add_task(Task("Bath",           40, "low",    recurrence="weekly"))
     dog_sched.build_plan()
 
-    for t in dog_sched.sort_by_time():
-        print(f"   {t.scheduled_time} — {t.title} ({t.duration_minutes} min)")
+    print_section(f"🐕 Biscuit ({dog.breed})")
+    render_schedule_table(dog_sched, dog.name)
+    render_progress(dog_sched)
 
-    print_warnings(dog_sched.check_conflicts(), "Same-pet conflict check — Biscuit")
-
-    # ── SCENARIO 2: Force a same-pet conflict ─────────────────────────
-    # build_plan() schedules tasks sequentially so they never overlap.
-    # To test detection we manually set two tasks to the same start time,
-    # simulating a bug or a manually overridden schedule.
-    print("\n\n── SCENARIO 2: Same-pet conflict (forced overlap) ──\n")
-    print("   Manually setting 'Feeding' and 'Morning walk' to 08:00...")
-
-    conflict_dog = Scheduler(owner=owner, pet=dog)
-
-    # Bypass build_plan and inject tasks with clashing times directly
-    task_a = copy.copy(Task("Morning walk", 30, "high"))
-    task_a.scheduled_time = "08:00"   # 08:00 – 08:30
-
-    task_b = copy.copy(Task("Feeding", 10, "high"))
-    task_b.scheduled_time = "08:00"   # 08:00 – 08:10  ← overlaps task_a
-
-    task_c = copy.copy(Task("Medication", 5, "high"))
-    task_c.scheduled_time = "08:25"   # 08:25 – 08:30  ← also overlaps task_a
-
-    conflict_dog.plan = [task_a, task_b, task_c]
-
-    for t in conflict_dog.plan:
-        end_min = Scheduler._to_minutes(t.scheduled_time) + t.duration_minutes
-        end_str = Scheduler._minutes_to_time(end_min)
-        print(f"   {t.scheduled_time}–{end_str}  {t.title}")
-
-    print_warnings(conflict_dog.check_conflicts(), "Same-pet conflict check — Biscuit (forced)")
-
-    # ── SCENARIO 3: Cross-pet conflict ────────────────────────────────
-    # Both pets start at 08:00. Jordan can only do one thing at a time,
-    # so overlapping tasks across pets are a real scheduling problem.
-    print("\n\n── SCENARIO 3: Cross-pet conflict ──\n")
-    print("   Both pets start at 08:00 — Jordan can't walk Biscuit")
-    print("   and clean Mochi's litter box simultaneously.\n")
-
-    # Give cat its own scheduler with a fresh owner budget
-    cat_owner = Owner(name="Jordan", available_minutes=120, preferred_start="08:00")
-    cat_owner.add_pet(cat)
-    cat_sched = Scheduler(owner=cat_owner, pet=cat)
-    cat_sched.add_task(Task("Litter box",  5, "high",   recurrence="daily"))
+    # ── Mochi ─────────────────────────────────────────────────────────
+    cat_sched = Scheduler(owner=owner, pet=cat)
     cat_sched.add_task(Task("Feeding",    10, "high",   recurrence="daily"))
+    cat_sched.add_task(Task("Litter box",  5, "high",   recurrence="daily"))
     cat_sched.add_task(Task("Playtime",   15, "medium", recurrence="daily"))
+    cat_sched.add_task(Task("Brush coat", 10, "medium", recurrence="weekly"))
+    cat_sched.add_task(Task("Vet check-up",30,"low",    recurrence="as_needed"))
     cat_sched.build_plan()
 
-    print("   Biscuit's plan:")
-    for t in dog_sched.sort_by_time():
-        end_min = Scheduler._to_minutes(t.scheduled_time) + t.duration_minutes
-        print(f"     {t.scheduled_time}–{Scheduler._minutes_to_time(end_min)}  {t.title}")
+    print_section(f"🐈 Mochi ({cat.breed})")
+    render_schedule_table(cat_sched, cat.name)
+    render_progress(cat_sched)
 
-    print("\n   Mochi's plan:")
-    for t in cat_sched.sort_by_time():
-        end_min = Scheduler._to_minutes(t.scheduled_time) + t.duration_minutes
-        print(f"     {t.scheduled_time}–{Scheduler._minutes_to_time(end_min)}  {t.title}")
+    # ── Conflict detection ────────────────────────────────────────────
+    print_section("⚠️  Conflict Check")
 
-    cross_warnings = Scheduler.check_cross_pet_conflicts([dog_sched, cat_sched])
-    print_warnings(cross_warnings, "Cross-pet conflict check — Biscuit vs Mochi")
+    same_dog = [w for w in dog_sched.check_conflicts() if "CONFLICT" in w]
+    same_cat = [w for w in cat_sched.check_conflicts() if "CONFLICT" in w]
+    cross    = [w for w in Scheduler.check_cross_pet_conflicts(
+                    [dog_sched, cat_sched]) if "CONFLICT" in w]
 
-    # ── SCENARIO 4: check_conflicts on empty plan ─────────────────────
-    print("\n\n── SCENARIO 4: check_conflicts() before build_plan() ──\n")
-    empty_sched = Scheduler(owner=owner, pet=dog)
-    print("   (no build_plan() called — should return info warning, not crash)")
-    print_warnings(empty_sched.check_conflicts(), "Empty plan check")
+    if not same_dog and not same_cat and not cross:
+        print(f"  {GREEN}✅  No conflicts detected across all pets.{RESET}")
+    for w in same_dog + same_cat + cross:
+        print(f"  {RED}{w}{RESET}")
 
-    print(f"\n{divider}")
-    print("  Conflict detection verified — no crashes. 🐾")
-    print(divider)
+    # ── Plan explanations ─────────────────────────────────────────────
+    print_section("💡 Why was this plan chosen?")
+    print(dog_sched.explain_plan())
+    print()
+    print(cat_sched.explain_plan())
+
+    # ── Summary ───────────────────────────────────────────────────────
+    total_tasks = len(dog_sched.plan) + len(cat_sched.plan)
+    total_mins  = (sum(t.duration_minutes for t in dog_sched.plan)
+                 + sum(t.duration_minutes for t in cat_sched.plan))
+    print(f"\n{BOLD}{'═' * W}{RESET}")
+    print(f"  {BOLD}All schedules generated.{RESET}  "
+          f"{total_tasks} tasks · {total_mins} min planned  🐶🐱")
+    print(f"{BOLD}{'═' * W}{RESET}\n")
 
 
 if __name__ == "__main__":
